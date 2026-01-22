@@ -1,4 +1,5 @@
-const { escape, exec } = require('../db/mysql')
+const { exec } = require('../db/mysql')
+const formatData = require('../utils/format-data')
 
 async function addBlog({
     title, 
@@ -9,18 +10,13 @@ async function addBlog({
     nickname, 
     userId,
 }) {
-    title = escape(title)
-    category = escape(category)
-    categoryName = escape(categoryName)
-    content = escape(content)
-    nickname = escape(nickname)
-    userId = escape(userId)
+    const { title: titleTemp, category: categoryTemp, categoryName: categoryNameTemp, content: contentTemp, nickname: nicknameTemp, userId: userIdTemp } = formatData({ title, category, categoryName, content, nickname, userId })
     tags = tags.split(',').map(tag => parseInt(tag))
     const timestamp = Math.floor(new Date().getTime() / 1000)
 
     const sql = `
         INSERT INTO blogs (title, category, category_name, content, create_person, create_person_name, update_person, update_person_name, createtime, look_number)
-        VALUES (${title}, ${category}, ${categoryName}, ${content}, ${userId}, ${nickname}, ${userId}, ${nickname}, FROM_UNIXTIME(${timestamp}), 0)
+        VALUES (${titleTemp}, ${categoryTemp}, ${categoryNameTemp}, ${contentTemp}, ${userIdTemp}, ${nicknameTemp}, ${userIdTemp}, ${nicknameTemp}, FROM_UNIXTIME(${timestamp}), 0)
     `
 
     let result
@@ -46,14 +42,7 @@ async function addBlog({
 } 
 
 async function getBlogList({ userId, searchByUserId, page = 1, pageSize = 10, category = '', tag = '', keyword = '' }) {
-    if (userId) userId = escape(userId)
-    if (searchByUserId) searchByUserId = escape(searchByUserId)
-    if (page) page = escape(page)
-    if (pageSize) pageSize = escape(pageSize)
-    if (category) category = escape(category)
-    if (tag) tag = escape(tag)
-    if (keyword) keyword = escape(keyword)
-
+    const { userId: userIdTemp, searchByUserId: searchByUserIdTemp, page: pageTemp, pageSize: pageSizeTemp, category: categoryTemp, tag: tagTemp, keyword: keywordTemp } = formatData({ userId, searchByUserId, page, pageSize, category, tag, keyword })
     const sql = `
         SELECT
             blogs.id,
@@ -69,12 +58,13 @@ async function getBlogList({ userId, searchByUserId, page = 1, pageSize = 10, ca
             blogs.look_number,
             COALESCE(l.likeCount, 0) as likeCount,
             COALESCE(c.commentCount, 0) as commentCount,
-            COALESCE(islike.isLiked, false) as isLiked,
-            COALESCE(
+            ${userIdTemp ? 'COALESCE(islike.isLiked, false) as isLiked,' : ''}
+            IF (
+                COUNT(t.id) = 0,
+                JSON_ARRAY(),
                 JSON_ARRAYAGG(
                     JSON_OBJECT('id', t.id, 'name', t.name)
-                ),
-                JSON_ARRAY()
+                )
             ) AS tags
         FROM blogs
         LEFT JOIN (
@@ -83,33 +73,30 @@ async function getBlogList({ userId, searchByUserId, page = 1, pageSize = 10, ca
         LEFT JOIN (
             SELECT blog_id, COUNT(*) as commentCount FROM comments GROUP BY blog_id
         ) c ON blogs.id = c.blog_id
-        ${userId ? `
+        ${userIdTemp ? `
             LEFT JOIN (
-                SELECT blog_id, COUNT(*) > 0 as isLiked FROM blog_likes WHERE user_id = ${userId} GROUP BY blog_id
+                SELECT blog_id, COUNT(*) > 0 as isLiked FROM blog_likes WHERE user_id = ${userIdTemp} GROUP BY blog_id
             ) islike ON blogs.id = islike.blog_id
         ` : ''}
         LEFT JOIN blog_tags bt ON blogs.id = bt.blog_id
         LEFT JOIN tags t ON bt.tag_id = t.id
-        WHERE 1=1 ${category ? `AND blogs.category = ${category}` : ''} ${tag ? `AND EXISTS (SELECT 1 FROM blog_tags WHERE blog_id = blogs.id AND tag_id = ${tag})` : ''} ${keyword ? `AND (blogs.title LIKE CONCAT('%', ${keyword}, '%') OR blogs.content LIKE CONCAT('%', ${keyword}, '%'))` : ''} ${searchByUserId ? `AND blogs.create_person = ${searchByUserId}` : ''}
+        WHERE 1=1 ${categoryTemp ? `AND blogs.category = ${categoryTemp}` : ''} ${tagTemp ? `AND EXISTS (SELECT 1 FROM blog_tags WHERE blog_id = blogs.id AND tag_id = ${tagTemp})` : ''} ${keywordTemp ? `AND (blogs.title LIKE CONCAT('%', ${keywordTemp}, '%') OR blogs.content LIKE CONCAT('%', ${keywordTemp}, '%'))` : ''} ${searchByUserIdTemp ? `AND blogs.create_person = ${searchByUserIdTemp}` : ''}
         GROUP BY blogs.id
         ORDER BY blogs.createtime DESC
-        LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+        LIMIT ${pageSizeTemp} OFFSET ${(pageTemp - 1) * pageSizeTemp}
     `
 
     return exec(sql)
 }
 
 async function getBlogTotal({ searchByUserId, category = '', tag = '', keyword = '' }) {
-    if (searchByUserId) searchByUserId = escape(searchByUserId)
-    if (category) category = escape(category)
-    if (tag) tag = escape(tag)
-    if (keyword) keyword = escape(keyword)
+    const { searchByUserId: searchByUserIdTemp, category: categoryTemp, tag: tagTemp, keyword: keywordTemp } = formatData({ searchByUserId, category, tag, keyword })
 
     const sql = `
         SELECT COUNT(DISTINCT blogs.id) AS total
         FROM blogs
         LEFT JOIN blog_tags bt ON blogs.id = bt.blog_id
-        WHERE 1=1 ${category ? `AND blogs.category = ${category}` : ''} ${tag ? `AND EXISTS (SELECT 1 FROM blog_tags WHERE blog_id = blogs.id AND tag_id = ${tag})` : ''} ${keyword ? `AND (blogs.title LIKE CONCAT('%', ${keyword}, '%') OR blogs.content LIKE CONCAT('%', ${keyword}, '%'))` : ''} ${searchByUserId ? `AND blogs.create_person = ${searchByUserId}` : ''}
+        WHERE 1=1 ${categoryTemp ? `AND blogs.category = ${categoryTemp}` : ''} ${tagTemp ? `AND EXISTS (SELECT 1 FROM blog_tags WHERE blog_id = blogs.id AND tag_id = ${tagTemp})` : ''} ${keywordTemp ? `AND (blogs.title LIKE CONCAT('%', ${keywordTemp}, '%') OR blogs.content LIKE CONCAT('%', ${keywordTemp}, '%'))` : ''} ${searchByUserIdTemp ? `AND blogs.create_person = ${searchByUserIdTemp}` : ''}
     `
 
     return exec(sql).then(result => {
@@ -118,8 +105,7 @@ async function getBlogTotal({ searchByUserId, category = '', tag = '', keyword =
 }
 
 async function getBlogDetail({ userId, id }) {
-    if (id) id = escape(id)
-    if (userId) userId = escape(userId)
+    const { userId: userIdTemp, id: idTemp } = formatData({ userId, id })
     const sql = `
         SELECT
             blogs.id,
@@ -135,12 +121,13 @@ async function getBlogDetail({ userId, id }) {
             blogs.look_number,
             COALESCE(l.likeCount, 0) as likeCount,
             COALESCE(c.commentCount, 0) as commentCount,
-            COALESCE(islike.isLiked, 0) as isLiked,
-            COALESCE(
+            ${userIdTemp ? 'COALESCE(islike.isLiked, false) as isLiked,' : ''}
+            IF (
+                COUNT(t.id) = 0,
+                JSON_ARRAY(),
                 JSON_ARRAYAGG(
                     JSON_OBJECT('id', t.id, 'name', t.name)
-                ),
-                JSON_ARRAY()
+                )
             ) AS tags
         FROM blogs
         LEFT JOIN (
@@ -149,19 +136,19 @@ async function getBlogDetail({ userId, id }) {
         LEFT JOIN (
             SELECT blog_id, COUNT(*) as commentCount FROM comments GROUP BY blog_id
         ) c ON blogs.id = c.blog_id
-        ${userId ? `
+        ${userIdTemp ? `
             LEFT JOIN (
-                SELECT blog_id, COUNT(*) > 0 as isLiked FROM blog_likes WHERE user_id = ${userId} GROUP BY blog_id
+                SELECT blog_id, COUNT(*) > 0 as isLiked FROM blog_likes WHERE user_id = ${userIdTemp} GROUP BY blog_id
             ) islike ON blogs.id = islike.blog_id
         ` : ''}
         LEFT JOIN blog_tags bt ON blogs.id = bt.blog_id
         LEFT JOIN tags t ON bt.tag_id = t.id
-        WHERE blogs.id = ${id}
+        WHERE blogs.id = ${idTemp}
         GROUP BY blogs.id
     `
 
     const addLookNumberSql = `
-        UPDATE blogs SET look_number = look_number + 1 WHERE id = ${id}
+        UPDATE blogs SET look_number = look_number + 1 WHERE id = ${idTemp}
     `
 
     try {
@@ -204,14 +191,13 @@ async function getBlogDetail({ userId, id }) {
 }
 
 async function likeBlog({ userId, id, isLiked = 1 }) {
-    if (id) id = escape(id)
-    if (userId) userId = escape(userId)
+    const { userId: userIdTemp, id: idTemp } = formatData({ userId, id })
     const timestamp = Math.floor(new Date().getTime() / 1000)
 
     const sql = isLiked ? `
-        INSERT INTO blog_likes (user_id, blog_id, create_time) VALUES (${userId}, ${id}, FROM_UNIXTIME(${timestamp}))
+        INSERT INTO blog_likes (user_id, blog_id, create_time) VALUES (${userIdTemp}, ${idTemp}, FROM_UNIXTIME(${timestamp}))
     ` : `
-        DELETE FROM blog_likes WHERE user_id = ${userId} AND blog_id = ${id}
+        DELETE FROM blog_likes WHERE user_id = ${userIdTemp} AND blog_id = ${idTemp}
     `
     return exec(sql).then(result => {
         return result.affectedRows > 0
@@ -240,6 +226,72 @@ async function getTagsNum() {
     return exec(sql)
 }
 
+async function getComments({ blogId, pageSize, page }) {
+    const { blogId: blogIdTemp, pageSize: pageSizeTemp, page: pageTemp } = formatData({ blogId, pageSize, page })
+
+    const sql = `
+        SELECT 
+            top_c.*,
+            IF(
+                COUNT(child_c.id) = 0,
+                JSON_ARRAY(),
+                JSON_ARRAYAGG(
+                    JSON_OBJECT('id', child_c.id, 'blog_id', child_c.blog_id, 'user_id', child_c.user_id, 'user_name', child_c.user_name, 'parent_id', child_c.parent_id, 'parent_grand_id', child_c.parent_grand_id, 'content', child_c.content, 'create_time', child_c.create_time)
+                )
+            ) AS child_comments
+        FROM comments top_c
+        LEFT JOIN (
+            SELECT * FROM comments WHERE blog_id = ${blogIdTemp}
+        ) child_c ON child_c.parent_id = top_c.id OR child_c.parent_grand_id = top_c.id
+        WHERE top_c.blog_id = ${blogIdTemp} AND top_c.parent_id IS NULL
+        GROUP BY top_c.id
+        ORDER BY top_c.create_time DESC
+        LIMIT ${pageSizeTemp} OFFSET ${(pageTemp - 1) * pageSizeTemp}
+    `
+
+    const result = await exec(sql)
+    
+    // 对每个评论的子评论按创建时间升序排序
+    if (result && Array.isArray(result)) {
+        result.forEach(comment => {
+            comment.child_comments = JSON.parse(comment.child_comments)
+            comment.child_comments.sort((a, b) => {
+                const timeA = new Date(a.create_time).getTime()
+                const timeB = new Date(b.create_time).getTime()
+                return timeA - timeB
+            })
+            comment.child_comments = JSON.stringify(comment.child_comments)
+        })
+    }
+    
+    return result
+}
+
+async function getCommentsTotal({ blogId }) {
+    const { blogId: blogIdTemp } = formatData({ blogId })
+    const sql = `
+        SELECT COUNT(*) as total FROM comments WHERE blog_id = ${blogIdTemp} AND parent_id IS NULL
+    `
+
+    return exec(sql).then(result => {
+        return result[0]?.total || null
+    })
+}
+
+async function addComment({ blogId, userId, userName, parentId, parentGrandId, content }) {
+    const { blogId: blogIdTemp, userId: userIdTemp, userName: userNameTemp, parentId: parentIdTemp, parentGrandId: parentGrandIdTemp, content: contentTemp } = formatData({ blogId, userId, userName, parentId, parentGrandId, content })
+    const timestamp = Math.floor(new Date().getTime() / 1000)
+
+    const sql = `
+        INSERT INTO comments (blog_id, user_id, user_name, parent_id, parent_grand_id, content, create_time) 
+        VALUE (${blogIdTemp}, ${userIdTemp}, ${userNameTemp}, ${parentIdTemp}, ${parentGrandIdTemp}, ${contentTemp}, FROM_UNIXTIME(${timestamp})) 
+    `
+
+    return exec(sql).then(result => {
+        return result.insertId || null
+    })
+}
+
 module.exports = {
     addBlog,
     getBlogList,
@@ -248,4 +300,7 @@ module.exports = {
     getTags,
     likeBlog,
     getTagsNum,
+    getComments,
+    getCommentsTotal,
+    addComment,
 }

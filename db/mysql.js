@@ -7,7 +7,9 @@ const connectionConfig = {
     ...MYSQL_CONF,
     host: MYSQL_CONF.host || '127.0.0.1',
     // 明确指定使用 TCP/IP 连接
-    socketPath: undefined
+    socketPath: undefined,
+    // 设置字符集为 utf8mb4，支持 emoji 等 4 字节字符
+    charset: 'utf8mb4'
 }
 
 let connection = mysql.createConnection(connectionConfig)
@@ -22,6 +24,8 @@ connection.connect((err, result) => {
         console.log('3. MySQL 端口是否为 3306')
         return
     }
+    // 确保连接使用 utf8mb4 字符集
+    connection.query('SET NAMES utf8mb4')
     console.log('数据库连接成功')
 })
 

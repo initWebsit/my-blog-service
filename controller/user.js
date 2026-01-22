@@ -1,14 +1,13 @@
-const { escape, exec } = require('../db/mysql')
+const { exec } = require('../db/mysql')
+const formatData = require('../utils/format-data')
 // const { genPassword } = require("../utils/cryp");
 
 async function login(email, password) {
-  email = escape(email)
-
   //   password = genPassword(password);
-  password = escape(password)
+  const { email: emailTemp, password: passwordTemp } = formatData({ email, password })
 
   const sql = `
-        SELECT * FROM users WHERE email=${email} AND password=${password}
+        SELECT * FROM users WHERE email=${emailTemp} AND password=${passwordTemp}
     `
   return exec(sql).then((result) => {
     return result[0] ? { 
@@ -21,11 +20,10 @@ async function login(email, password) {
 }
 
 async function getUserInfoByEmailOrNickname(email, nickname) {
-  email = escape(email)
-  nickname = escape(nickname)
+  const { email: emailTemp, nickname: nicknameTemp } = formatData({ email, nickname })
 
   const sql = `
-        SELECT * FROM users WHERE email=${email} OR nickname=${nickname}
+        SELECT * FROM users WHERE email=${emailTemp} OR nickname=${nicknameTemp}
     `
 
   return exec(sql).then((result) => {
@@ -38,15 +36,13 @@ async function getUserInfoByEmailOrNickname(email, nickname) {
 }
 
 async function insertUser(email, password, nickname) {
-  email = escape(email)
   //   password = genPassword(password);
-  password = escape(password)
-  nickname = escape(nickname)
+  const { email: emailTemp, password: passwordTemp, nickname: nicknameTemp } = formatData({ email, password, nickname })
 
   // 将毫秒时间戳转换为秒级时间戳，然后使用 FROM_UNIXTIME 转换为日期时间格式
   const timestamp = Math.floor(new Date().getTime() / 1000)
   const sql = `
-    INSERT INTO users (email, password, nickname, create_time) VALUES (${email}, ${password}, ${nickname}, FROM_UNIXTIME(${timestamp}))
+    INSERT INTO users (email, password, nickname, create_time) VALUES (${emailTemp}, ${passwordTemp}, ${nicknameTemp}, FROM_UNIXTIME(${timestamp}))
   `
 
   return exec(sql).then((result) => {
@@ -55,9 +51,9 @@ async function insertUser(email, password, nickname) {
 }
 
 async function getUserInfoById(id) {
-  id = escape(id)
+  const { id: idTemp } = formatData({ id })
   const sql = `
-    SELECT id, email, nickname, create_time FROM users WHERE id=${id}
+    SELECT id, email, nickname, create_time FROM users WHERE id=${idTemp}
   `
 
   return exec(sql).then((result) => {

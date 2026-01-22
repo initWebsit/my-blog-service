@@ -10,6 +10,7 @@ const {
 const { get, set, del } = require('../utils/redis')
 const CODE_MAP = require('../const/code')
 const loginCheck = require('../middleware/loginCheck')
+const { sendVerificationCode } = require('../utils/email')
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body
@@ -133,17 +134,31 @@ router.post('/sendCode', async (req, res) => {
     return res.send(new ErrorModel(null, '邮箱不能为空', CODE_MAP.INVALID_PARAM))
   const code = Math.random().toString(12).substring(2, 8)
 
-  let result
+  // 先存储验证码到 Redis
+  let redisResult
   try {
-    result = await set(`blog:user:code:${email}`, code, 60 * 5)
+    redisResult = await set(`blog:user:code:${email}`, code, 60 * 5)
   } catch (error) {
-    console.log(error)
+    console.log('Redis 存储失败:', error)
+    return res.send(new ErrorModel(null, '验证码发送失败', CODE_MAP.SERVER_ERROR))
   }
 
-  if (result) {
-    return res.send(new SuccessModel(null, '验证码发送成功'))
-  } else {
+  if (!redisResult) {
     return res.send(new ErrorModel(null, '验证码发送失败', CODE_MAP.SERVER_ERROR))
+  }
+
+  // 发送邮件
+  try {
+    const emailResult = await sendVerificationCode(email, code)
+    if (emailResult.success) {
+      return res.send(new SuccessModel(null, '验证码发送成功'))
+    } else {
+      console.error('邮件发送失败:', emailResult.error)
+      return res.send(new ErrorModel(null, '验证码发送失败，请稍后重试', CODE_MAP.SERVER_ERROR))
+    }
+  } catch (error) {
+    console.error('邮件发送异常:', error)
+    return res.send(new ErrorModel(null, '验证码发送失败，请稍后重试', CODE_MAP.SERVER_ERROR))
   }
 })
 
