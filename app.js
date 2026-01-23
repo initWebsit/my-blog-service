@@ -65,7 +65,12 @@ if (ENV !== 'production') {
   app.use(logger('dev'))
 } else {
   // 如果当前是线上环境，则将日志写入/logs/access.log文件中
-  const logFileName = path.join(__dirname, 'logs', 'access.log')
+  const logDir = path.join(__dirname, 'logs')
+  // 确保 logs 目录存在
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true })
+  }
+  const logFileName = path.join(logDir, 'access.log')
   const writeStream = fs.createWriteStream(logFileName, {
     flags: 'a'
   })
