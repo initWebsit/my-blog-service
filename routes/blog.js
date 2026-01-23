@@ -64,7 +64,10 @@ router.get('/getBlogList', async (req, res) => {
     }
 
     res.send(new SuccessModel({
-        list: result || [],
+        list: result?.map(item => ({
+            ...item,
+            content: item.content.replace(/<[^>]*>?/g, '').slice(0, 300),
+        })) || [],
         total: total || 0,
         page: pageTemp,
         pageSize: pageSizeTemp,
