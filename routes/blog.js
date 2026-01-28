@@ -234,7 +234,7 @@ router.post('/uploadImage', LoginCheck, upload.single('file'), async (req, res) 
     try {
         // 生成返回的 URL
         const fileName = req.file.filename
-        const imageUrl = `http://37.105.22.108/static/upload-image/${fileName}`
+        const imageUrl = `https://www.liuguangyuan.com/static/upload-image/${fileName}`
         
         res.send(new SuccessModel({ url: imageUrl }, '上传图片成功'))
     } catch (error) {
