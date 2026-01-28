@@ -8,7 +8,7 @@ let REDIS_CONF
 if (env === 'dev' || !env) {
     // mysql 配置
     MYSQL_CONF = {
-        host: '127.0.0.1',  // 使用 127.0.0.1 而不是 localhost，避免 socket 连接问题
+        host: '39.105.22.168',  // 使用 127.0.0.1 而不是 localhost，避免 socket 连接问题
         user: 'root',       // 请修改为你的 MySQL 用户名
         password: '13997565277',       // 请修改为你的 MySQL 密码
         port: 3306,         // MySQL 端口
@@ -17,7 +17,7 @@ if (env === 'dev' || !env) {
 
     // redis 配置
     REDIS_CONF = {
-        host: '127.0.0.1',
+        host: '39.105.22.168',
         port: 6379
     }
 }

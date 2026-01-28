@@ -7,7 +7,7 @@ var path = require('path')
 var fs = require('fs')
 var cookieParser = require('cookie-parser') // 中间件，处理 cookie
 var logger = require('morgan') // 中间件，生成日志
-const compression = require('compression') // 响应压缩中间件
+// const compression = require('compression') // 响应压缩中间件 - 已禁用，使用 Nginx 的 Brotli 压缩
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
 
@@ -23,17 +23,11 @@ app.set('view engine', 'jade')
 // 处理日志
 const ENV = process.env.NODE_ENV
 
-// 启用 gzip 压缩（减少响应体积，提升下载速度）
-app.use(compression({
-  filter: (req, res) => {
-    // 只压缩 JSON 和文本响应
-    if (req.headers['x-no-compression']) {
-      return false
-    }
-    return compression.filter(req, res)
-  },
-  level: 6 // 压缩级别 1-9，6 是平衡性能和压缩率的推荐值
-}))
+// 注意：响应压缩由 Nginx 层统一处理（使用 Brotli 压缩，比 gzip 更好）
+// Nginx 已配置 Brotli 压缩，应用层不再压缩，避免重复压缩浪费 CPU
+// 如果需要应用层压缩（例如开发环境没有 Nginx），可以取消下面的注释：
+// const compression = require('compression')
+// app.use(compression({ threshold: 0, level: 6 }))
 
 // 处理跨域请求（仅开发模式，必须在最前面）
 if (ENV !== 'production') {

@@ -1,9 +1,53 @@
 const express = require('express')
 const router = express.Router()
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
 const { ErrorModel, SuccessModel } = require('../model/resModel')
 const loginCheck = require('../middleware/loginCheck')
 const { addBlog, getBlogList, getBlogTotal, getBlogDetail, likeBlog, getTags, getTagsNum, getComments, getCommentsTotal, addComment } = require('../controller/blog')
 const LoginCheck = require('../middleware/loginCheck')
+
+// 配置上传目录
+// const uploadDir = '/var/www/my-blog-front/dist/official-prod/upload-image'
+const uploadDir = '/Users/xiaoliu/Documents/progress/ownProject/my-blog-front/dist/official-prod/upload-image'
+
+// 确保上传目录存在
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true })
+}
+
+// 配置 multer
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir)
+    },
+    filename: function (req, file, cb) {
+        // 生成唯一文件名：时间戳 + 随机数 + 原始扩展名
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        const ext = path.extname(file.originalname)
+        cb(null, uniqueSuffix + ext)
+    }
+})
+
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 限制文件大小为 10MB
+    },
+    fileFilter: function (req, file, cb) {
+        // 只允许图片文件
+        const allowedTypes = /jpeg|jpg|png|gif|webp/
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
+        const mimetype = allowedTypes.test(file.mimetype)
+        
+        if (mimetype && extname) {
+            return cb(null, true)
+        } else {
+            cb(new Error('只允许上传图片文件 (jpeg, jpg, png, gif, webp)'))
+        }
+    }
+})
 
 router.post('/addBlog', loginCheck, async (req, res) => {
     const { userId, nickname } = req.session
@@ -179,6 +223,31 @@ router.post('/addComment', LoginCheck, async (req, res) => {
         res.send(new SuccessModel(result, '添加评论成功'))
     } else {
         res.send(new ErrorModel(null, '添加评论失败'))
+    }
+})
+
+router.post('/uploadImage', LoginCheck, upload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.send(new ErrorModel(null, '图片不能为空'))
+    }
+    
+    try {
+        // 生成返回的 URL
+        const fileName = req.file.filename
+        const imageUrl = `http://37.105.22.108/static/upload-image/${fileName}`
+        
+        res.send(new SuccessModel({ url: imageUrl }, '上传图片成功'))
+    } catch (error) {
+        console.log(error)
+        // 如果出错，删除已上传的文件
+        if (req.file && req.file.path) {
+            try {
+                fs.unlinkSync(req.file.path)
+            } catch (unlinkError) {
+                console.log('删除文件失败:', unlinkError)
+            }
+        }
+        res.send(new ErrorModel(null, '上传图片失败'))
     }
 })
 
