@@ -9,8 +9,7 @@ const { addBlog, getBlogList, getBlogTotal, getBlogDetail, likeBlog, getTags, ge
 const LoginCheck = require('../middleware/loginCheck')
 
 // 配置上传目录
-const uploadDir = '/var/www/my-blog-front/dist/official-prod/upload-image'
-// const uploadDir = '/Users/xiaoliu/Documents/progress/ownProject/my-blog-front/dist/official-prod/upload-image'
+const uploadDir = process.env.NODE_ENV === 'production' ? '/var/www/my-blog-front/dist/official-prod/upload-image' : '/Users/xiaoliu/Documents/progress/ownProject/my-blog-front/dist/official-prod/upload-image'
 
 // 确保上传目录存在
 if (!fs.existsSync(uploadDir)) {
