@@ -5,7 +5,7 @@ const path = require('path')
 const fs = require('fs')
 const { ErrorModel, SuccessModel } = require('../model/resModel')
 const loginCheck = require('../middleware/loginCheck')
-const { addBlog, getBlogList, getBlogTotal, getBlogDetail, likeBlog, getTags, getTagsNum, getComments, getCommentsTotal, addComment } = require('../controller/blog')
+const { addBlog, getBlogList, getBlogTotal, getBlogDetail, likeBlog, getTags, getTagsNum, getComments, getCommentsTotal, addComment, updateBlog, deleteBlog } = require('../controller/blog')
 const LoginCheck = require('../middleware/loginCheck')
 
 // 配置上传目录
@@ -223,6 +223,45 @@ router.post('/addComment', LoginCheck, async (req, res) => {
         res.send(new SuccessModel(result, '添加评论成功'))
     } else {
         res.send(new ErrorModel(null, '添加评论失败'))
+    }
+})
+
+router.post('/updateBlog', LoginCheck, async (req, res) => {
+    const { userId, nickname } = req.session
+    const { id, title, category, categoryName, tags, content } = req.body
+    if (!id || !title || !category || !categoryName || !tags || !content) 
+        return res.send(new ErrorModel(null, '博客ID和博客内容不能为空'))
+    
+    let result
+    try {
+        result = await updateBlog({ id, title, category, categoryName, tags, content, userId, nickname })
+    } catch (error) {
+        console.log(error)
+    }
+
+    if (result) {
+        res.send(new SuccessModel(result, '更新博客成功'))
+    } else {
+        res.send(new ErrorModel(null, '更新博客失败'))
+    }
+})
+
+router.post('/deleteBlog', LoginCheck, async (req, res) => {
+    const { id } = req.body
+    if (!id) 
+        return res.send(new ErrorModel(null, '博客ID不能为空'))
+    
+    let result
+    try {
+        result = await deleteBlog({ id })
+    } catch (error) {
+        console.log(error)
+    }
+
+    if (result) {
+        res.send(new SuccessModel(result, '删除博客成功'))
+    } else {
+        res.send(new ErrorModel(null, '删除博客失败'))
     }
 })
 

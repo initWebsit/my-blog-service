@@ -292,6 +292,73 @@ async function addComment({ blogId, userId, userName, parentId, parentGrandId, c
     })
 }
 
+async function updateBlog({ id, title, category, categoryName, tags, content, userId, nickname }) {
+    const { id: idTemp, title: titleTemp, category: categoryTemp, categoryName: categoryNameTemp, content: contentTemp, userId: userIdTemp, nickname: nicknameTemp } = formatData({ id, title, category, categoryName, content, userId, nickname })
+    tags = tags.split(',').map(tag => parseInt(tag))
+    const timestamp = Math.floor(new Date().getTime() / 1000)
+
+    const sql = `
+        UPDATE blogs SET title = ${titleTemp}, category = ${categoryTemp}, category_name = ${categoryNameTemp}, content = ${contentTemp}, update_person = ${userIdTemp}, update_person_name = ${nicknameTemp} WHERE id = ${idTemp}
+    `
+    const blog_tag_delete_sql = `
+        DELETE FROM blog_tags WHERE blog_id = ${idTemp}
+    `
+
+    let result
+    try {
+        result = await Promise.allSettled([
+            exec(sql),
+            exec(blog_tag_delete_sql)
+        ])
+    } catch (error) {
+        console.log(error)
+    }
+
+    if (!result[0]?.value?.affectedRows) return false
+
+    const execArr = []
+    for (let i = 0; i < tags.length; i++) {
+        const blog_tag_sql = `
+            INSERT INTO blog_tags (blog_id, tag_id, create_time) VALUES (${idTemp}, ${tags[i]}, FROM_UNIXTIME(${timestamp}))
+        `
+        execArr.push(exec(blog_tag_sql))
+    }
+    let result3
+    try {
+        result3 = await Promise.all(execArr)
+    } catch (error) {
+        console.log(error)
+    }
+
+    return result3?.every(item => item?.affectedRows > 0) || false
+}
+
+async function deleteBlog({ id }) {
+    const { id: idTemp } = formatData({ id })
+    const sql = `
+        DELETE FROM blogs WHERE id = ${idTemp}
+    `
+    const blog_tag_del_sql = `
+        DELETE FROM blog_tags WHERE blog_id = ${idTemp}
+    `
+    const comment_del_sql = `
+        DELETE FROM comments WHERE blog_id = ${idTemp}
+    `
+
+    let result
+    try {
+        result = await Promise.allSettled([
+            exec(sql),
+            exec(blog_tag_del_sql),
+            exec(comment_del_sql)
+        ])
+    } catch (error) {
+        console.log(error)
+    }
+
+    return result[0]?.value?.affectedRows > 0
+}
+
 module.exports = {
     addBlog,
     getBlogList,
@@ -303,4 +370,6 @@ module.exports = {
     getComments,
     getCommentsTotal,
     addComment,
+    updateBlog,
+    deleteBlog,
 }
