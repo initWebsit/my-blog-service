@@ -109,7 +109,7 @@ router.get('/getBlogList', async (req, res) => {
     return res.send(new SuccessModel({
         list: result?.map(item => ({
             ...item,
-            content: item.content.replace(/<[^>]*>?/g, '').slice(0, 300),
+            content: item.content.replace(/<[^>]*>?/g, '').slice(0, 500),
         })) || [],
         total: total || 0,
         page: pageTemp,
