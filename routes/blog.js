@@ -9,8 +9,8 @@ const { addBlog, getBlogList, getBlogTotal, getBlogDetail, likeBlog, getTags, ge
 const LoginCheck = require('../middleware/loginCheck')
 
 // 配置上传目录
-const uploadDir = '/var/www/my-blog-front/dist/official-prod/upload-image'
-// const uploadDir = '/Users/xiaoliu/Documents/progress/ownProject/my-blog-front/dist/official-prod/upload-image'
+// const uploadDir = '/var/www/my-blog-front/dist/official-prod/upload-image'
+const uploadDir = '/Users/xiaoliu/Documents/progress/ownProject/my-blog-front/dist/official-prod/upload-image'
 
 // 确保上传目录存在
 if (!fs.existsSync(uploadDir)) {
@@ -79,9 +79,9 @@ router.post('/addBlog', loginCheck, async (req, res) => {
     }
 
     if (result) {
-        res.send(new SuccessModel(result, '新增博客成功'))
+        return res.send(new SuccessModel(result, '新增博客成功'))
     } else {
-        res.send(new ErrorModel(null, '新增博客失败'))
+        return res.send(new ErrorModel(null, '新增博客失败'))
     }
 })
 
@@ -107,7 +107,7 @@ router.get('/getBlogList', async (req, res) => {
         console.log(error)
     }
 
-    res.send(new SuccessModel({
+    return res.send(new SuccessModel({
         list: result?.map(item => ({
             ...item,
             content: item.content.replace(/<[^>]*>?/g, '').slice(0, 300),
@@ -133,9 +133,9 @@ router.get('/getBlogDetail', async (req, res) => {
     }
 
     if (result) {
-        res.send(new SuccessModel(result, '获取博客详情成功'))
+        return res.send(new SuccessModel(result, '获取博客详情成功'))
     } else {
-        res.send(new ErrorModel(null, '获取博客详情失败'))
+        return res.send(new ErrorModel(null, '获取博客详情失败'))
     }
 })
 
@@ -154,9 +154,9 @@ router.post('/likeBlog', async (req, res) => {
     }
 
     if (result) {
-        res.send(new SuccessModel(result, '点赞博客成功'))
+        return res.send(new SuccessModel(result, '点赞博客成功'))
     } else {
-        res.send(new ErrorModel(null, '点赞博客失败'))
+        return res.send(new ErrorModel(null, '点赞博客失败'))
     }
 })
 
@@ -171,9 +171,9 @@ router.post('/getTags', async (req, res) => {
 
     console.log('result', result)
     if (result) {
-        res.send(new SuccessModel(result, '获取标签列表成功'))
+        return res.send(new SuccessModel(result, '获取标签列表成功'))
     } else {
-        res.send(new ErrorModel(null, '获取标签列表失败'))
+        return res.send(new ErrorModel(null, '获取标签列表失败'))
     }
 })
 
@@ -195,14 +195,14 @@ router.get('/getComments', async (req, res) => {
     }
 
     if (result) {
-        res.send(new SuccessModel({
+        return res.send(new SuccessModel({
             list: result || [],
             total: total || 0,
             page: pageTemp,
             pageSize: pageSizeTemp,
         }, '获取评论列表成功'))
     } else {
-        res.send(new ErrorModel(null, '获取评论列表失败'))
+        return res.send(new ErrorModel(null, '获取评论列表失败'))
     }
 })
 
@@ -220,9 +220,9 @@ router.post('/addComment', LoginCheck, async (req, res) => {
     }
 
     if (result) {
-        res.send(new SuccessModel(result, '添加评论成功'))
+        return res.send(new SuccessModel(result, '添加评论成功'))
     } else {
-        res.send(new ErrorModel(null, '添加评论失败'))
+        return res.send(new ErrorModel(null, '添加评论失败'))
     }
 })
 
@@ -240,9 +240,9 @@ router.post('/updateBlog', LoginCheck, async (req, res) => {
     }
 
     if (result) {
-        res.send(new SuccessModel(result, '更新博客成功'))
+        return res.send(new SuccessModel(result, '更新博客成功'))
     } else {
-        res.send(new ErrorModel(null, '更新博客失败'))
+        return res.send(new ErrorModel(null, '更新博客失败'))
     }
 })
 
@@ -259,9 +259,9 @@ router.post('/deleteBlog', LoginCheck, async (req, res) => {
     }
 
     if (result) {
-        res.send(new SuccessModel(result, '删除博客成功'))
+        return res.send(new SuccessModel(result, '删除博客成功'))
     } else {
-        res.send(new ErrorModel(null, '删除博客失败'))
+        return res.send(new ErrorModel(null, '删除博客失败'))
     }
 })
 
@@ -275,7 +275,7 @@ router.post('/uploadImage', LoginCheck, upload.single('file'), async (req, res) 
         const fileName = req.file.filename
         const imageUrl = `https://www.liuguangyuan.com/static/upload-image/${fileName}`
         
-        res.send(new SuccessModel({ url: imageUrl }, '上传图片成功'))
+        return res.send(new SuccessModel({ url: imageUrl }, '上传图片成功'))
     } catch (error) {
         console.log(error)
         // 如果出错，删除已上传的文件
@@ -286,7 +286,7 @@ router.post('/uploadImage', LoginCheck, upload.single('file'), async (req, res) 
                 console.log('删除文件失败:', unlinkError)
             }
         }
-        res.send(new ErrorModel(null, '上传图片失败'))
+        return res.send(new ErrorModel(null, '上传图片失败'))
     }
 })
 

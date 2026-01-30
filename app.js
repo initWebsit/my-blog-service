@@ -29,43 +29,43 @@ const ENV = process.env.NODE_ENV
 // const compression = require('compression')
 // app.use(compression({ threshold: 0, level: 6 }))
 
-// 处理跨域请求（仅开发模式，必须在最前面）
-if (ENV !== 'production') {
-  app.use((req, res, next) => {
-    // 获取请求的 Origin
-    const origin = req.headers.origin
+// // 处理跨域请求（仅开发模式，必须在最前面）
+// if (ENV !== 'production') {
+//   app.use((req, res, next) => {
+//     // 获取请求的 Origin
+//     const origin = req.headers.origin
     
-    // 允许的源列表（开发环境）
-    const allowedOrigins = [
-      'http://localhost:6120',
-      'http://localhost:3000',
-      'http://127.0.0.1:6120',
-      'http://127.0.0.1:3000'
-    ]
+//     // 允许的源列表（开发环境）
+//     const allowedOrigins = [
+//       'http://localhost:6120',
+//       'http://localhost:3000',
+//       'http://127.0.0.1:6120',
+//       'http://127.0.0.1:3000'
+//     ]
     
-    // 如果请求包含 Origin 且在允许列表中，则使用该 Origin
-    // 否则使用第一个允许的源作为默认值
-    if (origin && allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin)
-    } else if (allowedOrigins.length > 0) {
-      res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0])
-    }
+//     // 如果请求包含 Origin 且在允许列表中，则使用该 Origin
+//     // 否则使用第一个允许的源作为默认值
+//     if (origin && allowedOrigins.includes(origin)) {
+//       res.setHeader('Access-Control-Allow-Origin', origin)
+//     } else if (allowedOrigins.length > 0) {
+//       res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0])
+//     }
     
-    // 设置其他 CORS 头部
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, user-language')
-    res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization')
-    res.setHeader('Access-Control-Allow-Credentials', 'true')
+//     // 设置其他 CORS 头部
+//     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+//     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, user-language')
+//     res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Authorization')
+//     res.setHeader('Access-Control-Allow-Credentials', 'true')
     
-    // 处理 OPTIONS 预检请求
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(204)
-      return
-    }
+//     // 处理 OPTIONS 预检请求
+//     if (req.method === 'OPTIONS') {
+//       res.sendStatus(204)
+//       return
+//     }
     
-    next()
-  })
-}
+//     next()
+//   })
+// }
 
 if (ENV !== 'production') {
   // 如果是开发环境 / 测试环境，则直接在控制台终端打印 log 即可
@@ -128,26 +128,26 @@ app.use(function(req, res, next) {
 // 错误处理
 // eslint-disable-next-line no-unused-vars
 app.use(function(err, req, res, next) {
-  // 在开发模式下，错误响应也需要设置 CORS 头部
-  if (ENV !== 'production') {
-    const origin = req.headers.origin
-    const allowedOrigins = [
-      'http://localhost:6120',
-      'http://localhost:3000',
-      'http://127.0.0.1:6120',
-      'http://127.0.0.1:3000'
-    ]
+  // // 在开发模式下，错误响应也需要设置 CORS 头部
+  // if (ENV !== 'production') {
+  //   const origin = req.headers.origin
+  //   const allowedOrigins = [
+  //     'http://localhost:6120',
+  //     'http://localhost:3000',
+  //     'http://127.0.0.1:6120',
+  //     'http://127.0.0.1:3000'
+  //   ]
     
-    if (origin && allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin)
-    } else if (allowedOrigins.length > 0) {
-      res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0])
-    }
+  //   if (origin && allowedOrigins.includes(origin)) {
+  //     res.setHeader('Access-Control-Allow-Origin', origin)
+  //   } else if (allowedOrigins.length > 0) {
+  //     res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0])
+  //   }
     
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, user-language')
-    res.setHeader('Access-Control-Allow-Credentials', 'true')
-  }
+  //   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  //   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, user-language')
+  //   res.setHeader('Access-Control-Allow-Credentials', 'true')
+  // }
   
   // set locals, only providing error in development
   res.locals.message = err.message

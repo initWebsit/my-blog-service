@@ -8,7 +8,7 @@ module.exports = (req, res, next) => {
         return
     }
     // 登陆失败，禁止继续执行，所以不需要执行 next()
-    res.send(
+    return res.send(
         new ErrorModel(null, '用户未登录', CODE_MAP.UNAUTHORIZED)
     )
 }

@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
   req.session.email = result.email
   req.session.nickname = result.nickname
 
-  res.send(
+  return res.send(
     new SuccessModel(
       {
         id: result.id,
